@@ -1,0 +1,36 @@
+import matplotlib.pyplot as plt
+import numpy as np
+def gradient_descent(initial,learning_rate, num_iterations):
+    x_values=[]
+    x=initial
+    for i in range(num_iterations):
+        gradient=2*(x+3) # The gradient of the function y=(x+3)^2
+        x=x-learning_rate * gradient
+        x_values.append(x)
+    return x_values
+
+# intial values
+initial = 2
+learning_rate=0.1
+num_iterations=100
+
+# find the local minima
+x_values = gradient_descent(initial, learning_rate, num_iterations)
+y_values=[(x+3)**2 for x in x_values]
+
+# plot the function and gradient descent
+x_range = np.linspace(-10,4,400)
+y_range = [(x+3)**2 for x in x_range]
+
+plt.figure(figsize=(10,6))
+plt.plot(x_range,y_range,label='y=(x+3)^2',color='blue')
+plt.scatter(x_values,y_values,color='red',label="Gradient Descent Path")
+
+
+
+
+
+
+
+
+

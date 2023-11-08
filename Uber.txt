@@ -1,0 +1,69 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import classification_report,r2_score,mean_squared_error
+df = pd.read_csv("uber.csv")
+df.isnull().sum()
+df.dropna(inplace=True)
+df=df.drop(['Unnamed: 0', 'key'],axis=1)
+df['pickup_datetime'] = pd.to_datetime(df['pickup_datetime'])
+
+df=df.assign(hour =df.pickup_datetime.dt.hour,
+         day=df.pickup_datetime.dt.day,
+         month=df.pickup_datetime.dt.month,
+         year=df.pickup_datetime.dt.year,
+         dayofweek=df.pickup_datetime.dt.dayofweek)
+
+df.plot(kind="box",subplots=True, layout=(6,2),figsize=(15,20))
+
+def remove_outlier(data, col):
+    q1 = data[col].quantile(0.25)
+    q3 = data[col].quantile(0.75)
+    IQR = q3 - q1
+    lower_whisker = q1 - 1.5 * IQR
+    upper_whisker = q3 + 1.5 * IQR
+    data = data[(data[col] >= lower_whisker) & (data[col] <= upper_whisker)]
+    return data
+
+def treat_outlier(data, col_list):
+    for c in col_list:
+        data = remove_outlier(data, c)
+    return data
+
+df=treat_outlier(df,df)
+
+import haversine as hs
+
+travel_dist = []
+n = len(df['pickup_longitude'])
+for pos in range(n):
+    row=df.iloc[pos]  # iloc selects the column
+    long1 = row['pickup_longitude']
+    lati1 = row['pickup_latitude']
+    long2 = row['dropoff_longitude']
+    lati2 = row['dropoff_latitude']
+    
+    loc1 = (lati1, long1)
+    loc2 = (lati2, long2)
+    
+    c = hs.haversine(loc1, loc2)
+    travel_dist.append(c)
+
+df['dist_travel'] = travel_dist
+
+x = df[['passenger_count','hour','day','month','year','dayofweek','dist_travel']]
+y= df['fare_amount']
+X_train,X_test,y_train,y_test = train_test_split(x,y,test_size = 0.33)
+
+regression = LinearRegression()
+regression.fit(X_train,y_train)
+prediction = regression.predict(X_test) #To predict the target values
+r2_score(y_test,prediction)
+MSE = mean_squared_error(y_test,prediction)
+print(MSE)
+rf = RandomForestRegressor(n_estimators=100) 
+
